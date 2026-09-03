@@ -12,13 +12,12 @@ try:
 except:
     setMicState = lambda x: None
 
+toast_is_loaded = False
 try:
     from library import notify
-
-    use_toast = True
+    toast_is_loaded = True
 except:
-    use_toast = False
-
+    pass
 
 class Listener:
     def __init__(self):
@@ -31,9 +30,9 @@ class Listener:
         self.reloaded_files = []
 
     def notify_user(self):
-        msg = "caster" if self.reloaded_files else "nothing"
-        if use_toast:
-            notify.toast(msg, "reloaded")
+        # msg = "caster" if self.reloaded_files else "nothing"
+        if toast_is_loaded:
+            notify.toast("\n".join(self.reloaded_files) if self.reloaded_files else "nothing", "Reloaded Caster Rules")
 
 
 class ManualReloadObservable(BaseReloadObservable):
@@ -66,16 +65,20 @@ class ManualReloadObservable(BaseReloadObservable):
         self.listener.notify_user()
 
     def reload_everything(self):
-        self.listener.reset()
-        Key("c-s/30").execute()  # save current file
-        # cycle microphone to reload any changed dragonfly grammars
+        """
+        Reload Caster as well as dragonfly rules. Dragonfly rules are reloaded
+        by cycling the microphone.
+        """
+        # Save the current file
+        Key("c-s/30").execute()
+
+        # Cycle microphone to reload dragonfly rules.
         setMicState("off")
         sleep(0.2)
         setMicState("on")
-        # reload caster rules
-        self.listener.reset()
-        self._update()
-        self.listener.notify_user()
+        
+        # Reload Caster rules.
+        self.reload_all_rules()
 
     def get_loadable(self):
         details = RuleDetails(
